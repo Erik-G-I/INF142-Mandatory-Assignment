@@ -6,5 +6,3 @@ socket.connect(("localhost", 5555))
 
 test = socket.recv(1024).decode()
 print(test)
-input("")
-
