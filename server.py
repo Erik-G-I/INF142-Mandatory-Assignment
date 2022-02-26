@@ -1,4 +1,3 @@
-import imp
 from socket import socket
 from threading import Thread
 
@@ -13,9 +12,10 @@ def accept(socket):
     while True:
         connection, addr = socket.accept()
         print("Accepted", connection, "from", addr)
-        Thread(target=read, args=(connection)).start()
+        Thread(target=read, args=(connection,)).start()
 
 def read(connection):
+    connection.send(str.encode("Connected"))
     while True:
         data = connection.recv(1024)
         if data:
@@ -27,16 +27,17 @@ def read(connection):
             connection.close()
             break
 
-while len(connectedClients) < 2:
-    connection, addr = socket.accept()
-    connectedClients.append((connection, addr))
+accept(socket)
+# while len(connectedClients) < 2:
+#     connection, addr = socket.accept()
+#     connectedClients.append((connection, addr))
 
-while True:
+# while True:
 
-    print("Got connection from: ", connectedClients[0])
-    print("Got connection from: ", connectedClients[1])
-    connectedClients[0][0].send("poop".encode())
-    connectedClients[1][0].send("poop".encode())
+#     print("Got connection from: ", connectedClients[0])
+#     print("Got connection from: ", connectedClients[1])
+#     connectedClients[0][0].send("poop".encode())
+#     connectedClients[1][0].send("poop".encode())
 
 
-    break
+#     break
