@@ -20,9 +20,9 @@ while True:
         playerMove = input("Choose a champion: ")
         socket.send(playerMove.encode())
 
-        moveLegality = socket.recv(1024)
-        while moveLegality == "False":
-            print("Illegal move")
+        moveLegality = socket.recv(1024).decode()
+        while moveLegality != "True":
+            print(moveLegality)
             playerMove = input("Choose a champion: ")
             socket.send(playerMove.encode())
-            moveLegality = socket.recv(1024)
+            moveLegality = socket.recv(1024).decode()

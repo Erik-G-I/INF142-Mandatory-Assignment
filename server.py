@@ -1,6 +1,7 @@
 from socket import socket
 from threading import Thread
 from time import sleep
+from champlistloader import load_some_champs
 
 socket = socket()
 
@@ -8,6 +9,9 @@ socket.bind(("", 5555))
 socket.listen()
 connections = []
 currentPlayer = "2"
+player1 = []
+player2 = []
+champions = load_some_champs()
 
 def updatePlayer():
     global currentPlayer
@@ -32,10 +36,38 @@ def accept(socket):
     doTurns(2)
 
 
-def isLegal(playerMove):
+def choosePlayerList(playerID, playerMove):
+    if playerID == "1":
+        return isLegal(playerMove, player1)
+    if playerID == "2":
+        return isLegal(playerMove, player2)
+    else:
+        raise Exception("Invalid playerID")
+
+def isLegal(playerMove, playerList):
     # This function is supposed to see if a given player move is accepted by the game
     # Fix this at some point
-    return True
+    global champions
+    global player1
+    global player2
+
+    match playerMove:
+        case name if name not in champions:
+            return (False, f'The champion {name} is not available. Try again.')
+
+        case name if name in playerList:
+            return (False, f'{name} is already in your team. Try again.')
+            
+        case name if name in player1:
+            return (False, f'{name} is in the enemy team. Try again.')
+                
+        case name if name in player2:
+            return (False, f'{name} is in the enemy team. Try again.')
+                
+        case _:
+            playerList.append(name)
+            return (True, "")
+    
 
 
 def doPlayerTurn(connection, playerID):
@@ -45,12 +77,12 @@ def doPlayerTurn(connection, playerID):
     if str(playerID) == playerTurn:
         while True:
             playerMove = connection.recv(1024).decode()
-
-            if isLegal(playerMove):
+            moveLegality = choosePlayerList(playerID, playerMove)
+            if moveLegality[0]:
                 connection.send("True".encode())
                 break
             else:
-                connection.send("False".encode())
+                connection.send(moveLegality[1].encode())
     
     print(f"Player {playerID} chose {playerMove}")
 
