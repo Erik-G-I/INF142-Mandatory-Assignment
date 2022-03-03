@@ -19,18 +19,10 @@ while True:
         print("It is your turn")
         playerMove = input("Choose a champion: ")
         socket.send(playerMove.encode())
-        moveLegality = "False"
+
+        moveLegality = socket.recv(1024)
         while moveLegality == "False":
+            print("Illegal move")
+            playerMove = input("Choose a champion: ")
+            socket.send(playerMove.encode())
             moveLegality = socket.recv(1024)
-            if (moveLegality == "True"):
-                break
-                
-
-
-    else:
-        print("It is your opponent's turn")
-        sleep(1)
-    
-
-
-input()

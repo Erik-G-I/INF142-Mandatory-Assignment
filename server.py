@@ -1,6 +1,5 @@
 from socket import socket
 from threading import Thread
-import threading
 from time import sleep
 
 socket = socket()
@@ -20,7 +19,7 @@ def updatePlayer():
         raise Exception("PlayerID must be 1 or 2")
     return currentPlayer
 
-# code from slides, Lecture 7
+
 def accept(socket):
     while len(connections) < 2:
         connection, addr = socket.accept()
@@ -32,22 +31,27 @@ def accept(socket):
 
     doTurns(2)
 
+
 def isLegal(playerMove):
     # This function is supposed to see if a given player move is accepted by the game
+    # Fix this at some point
     return True
 
-def doTurn(connection, playerID):
+
+def doPlayerTurn(connection, playerID):
     playerTurn = updatePlayer()
     connection.send(playerTurn.encode())
     
     if str(playerID) == playerTurn:
         while True:
-            playerMove = connection.recv(1024)
+            playerMove = connection.recv(1024).decode()
+
             if isLegal(playerMove):
                 connection.send("True".encode())
+                break
             else:
                 connection.send("False".encode())
-
+    
     print(f"Player {playerID} chose {playerMove}")
 
 
@@ -55,7 +59,7 @@ def turnSetup():
     for conInfo in connections:
         connection = conInfo[0]
         playerID = conInfo[1]
-        thread = Thread(target=doTurn, args=(connection, playerID,))
+        thread = Thread(target=doPlayerTurn, args=(connection, playerID,))
         thread.start()
         thread.join()
 
@@ -63,25 +67,6 @@ def turnSetup():
 def doTurns(amount):
     for _ in range(amount):
         turnSetup()
-
-    
-
-
-    
-
-
-
-
-
-        # data = connection.recv(1024)
-        # if data:
-        #     sentence = data.decode()
-        #     new_sentence = sentence.upper()
-        #     connection.send(new_sentence.encode())
-        # else:
-        #     print('closing', connection)
-        #     connection.close()
-        #     break
 
 
 accept(socket)
