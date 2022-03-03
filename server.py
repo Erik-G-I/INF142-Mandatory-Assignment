@@ -165,7 +165,7 @@ def printResults(result):
 
         redChoice = emoji(pair.red.value)
         blueChoice = emoji(pair.blue.value)
-        roundInfo = f'{redChamp.name} {redChoice}\n{blueChamp.name} {blueChoice}'
+        roundInfo = f'{redChamp.name} {redChoice}\n{blueChamp.name} {blueChoice}\n'
         sendToBothClients(roundInfo)
 
 
