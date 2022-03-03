@@ -13,12 +13,24 @@ print(f"You are Player {playerID}")
 print()
 
 
-playerTurn = socket.recv(1).decode()
-if playerTurn == playerID:
-    print("It is your turn")
-    input("Choose a champion: ")
-else:
-    print("It is your opponent's turn")
+while True:
+    playerTurn = socket.recv(1).decode()
+    if playerTurn == playerID:
+        print("It is your turn")
+        playerMove = input("Choose a champion: ")
+        socket.send(playerMove.encode())
+        moveLegality = "False"
+        while moveLegality == "False":
+            moveLegality = socket.recv(1024)
+            if (moveLegality == "True"):
+                break
+                
+
+
+    else:
+        print("It is your opponent's turn")
+        sleep(1)
+    
 
 
 input()

@@ -7,28 +7,69 @@ socket = socket()
 
 socket.bind(("", 5555))
 socket.listen()
-threads = []
+connections = []
+currentPlayer = "2"
+
+def updatePlayer():
+    global currentPlayer
+    if currentPlayer == "1":
+        currentPlayer = "2"
+    elif currentPlayer == "2":
+        currentPlayer = "1"
+    else:
+        raise Exception("PlayerID must be 1 or 2")
+    return currentPlayer
 
 # code from slides, Lecture 7
 def accept(socket):
-    while True:
+    while len(connections) < 2:
         connection, addr = socket.accept()
         print("Accepted", connection, "from", addr)
-        thread = Thread(target=read, args=(connection,))
-        threads.append(thread)
-        thread.start()
+        playerID = str(len(connections)+1)
+        connections.append((connection, playerID))
+        connection.send("Successfully connected".encode())
+        connection.send(playerID.encode())
 
-def read(connection):
-    connection.send(str.encode("Connected"))
-    playerID = str(len(threads)).encode()
-    connection.send(playerID)
+    doTurns(2)
+
+def isLegal(playerMove):
+    # This function is supposed to see if a given player move is accepted by the game
+    return True
+
+def doTurn(connection, playerID):
+    playerTurn = updatePlayer()
+    connection.send(playerTurn.encode())
     
-    while len(threads) < 2:
-        continue
+    if str(playerID) == playerTurn:
+        while True:
+            playerMove = connection.recv(1024)
+            if isLegal(playerMove):
+                connection.send("True".encode())
+            else:
+                connection.send("False".encode())
 
-    while True:
-        playerTurn = "1"
-        connection.send(playerTurn.encode())
+    print(f"Player {playerID} chose {playerMove}")
+
+
+def turnSetup():
+    for conInfo in connections:
+        connection = conInfo[0]
+        playerID = conInfo[1]
+        thread = Thread(target=doTurn, args=(connection, playerID,))
+        thread.start()
+        thread.join()
+
+
+def doTurns(amount):
+    for _ in range(amount):
+        turnSetup()
+
+    
+
+
+    
+
+
 
 
 
