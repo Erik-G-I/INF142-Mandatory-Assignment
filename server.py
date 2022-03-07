@@ -1,22 +1,60 @@
-from multiprocessing import RLock, connection
-from socket import socket
+from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
-from time import sleep
-from champlistloader import load_some_champs
 from core import pair_throw
-import random
 from core import Shape
+from core import Champion
+import random
+import json
 from rich.table import Table
 
-socket = socket()
+def initialise_server():
+    global socket
+    socket = socket()
+    socket.bind(("localhost", 5555))
+    socket.listen()
 
-socket.bind(("", 5555))
-socket.listen()
-connections = []
-currentPlayer = "2"
-player1 = []
-player2 = []
-champions = load_some_champs()
+def initialise_game():
+    global connections
+    global currentPlayer
+    global player1
+    global player2
+    global champions
+    connections = []
+    currentPlayer = "2"
+    player1 = []
+    player2 = []
+    champions = fetch_champs()
+
+
+def fetch_champs():
+    s = socket(AF_INET, SOCK_STREAM)
+    s.connect(("localhost", 6000))
+    initialCon = s.recv(128).decode()
+    print(initialCon)
+
+    request = "request_champ_data".encode()
+    s.send(request)
+    champions = s.recv(1024).decode()
+    champions = json.loads(champions)
+    s.close()
+
+    print("Fetched the following champions from database:")
+    for champ in champions:
+        champ_stats = champions.get(champ)
+        champion = convert_to_champ(champ_stats)
+        champions[champ] = champion
+        print(champion)
+        
+    return champions
+
+def convert_to_champ(champ_stats):
+    name = champ_stats[0]
+    rock = champ_stats[1]
+    paper = champ_stats[2]
+    scissors = champ_stats[3]
+
+    return Champion(name, rock, paper, scissors)
+
 
 def updatePlayer():
     global currentPlayer
@@ -30,8 +68,8 @@ def updatePlayer():
 
 
 def accept(socket):
-    global champions
     while len(connections) < 2:
+        print("Waiting for client(s)...")
         connection, addr = socket.accept()
         print("Accepted", connection, "from", addr)
         playerID = str(len(connections)+1)
@@ -39,20 +77,11 @@ def accept(socket):
         connection.send("Successfully connected".encode())
         connection.send(playerID.encode())
 
-    
-    print_available_champs(champions)
     doTurns(2)
     results = doRounds(3)
     print(results)
     print()
     printResults(results)
-
-def print_available_champs(champions):
-
-    sendToBothClients('Available champions\n')
-    # Populate the table
-    for champion in champions.values():
-        sendToBothClients(f"{champion}\n")
 
 
 def choosePlayerList(playerID, playerMove):
@@ -63,41 +92,47 @@ def choosePlayerList(playerID, playerMove):
     else:
         raise Exception("Invalid playerID")
 
+
 def isLegal(playerMove, playerList):
-    # This function is supposed to see if a given player move is accepted by the game
-    # Fix this at some point
     global champions
     global player1
     global player2
-
+    
     match playerMove:
         case name if name not in champions:
-            return (False, f'The champion {name} is not available. Try again.')
+            return (False, f'The champion is not available. Try again.')
 
-        case name if name in playerList:
+        case name if champions.get(name) in playerList:
             return (False, f'{name} is already in your team. Try again.')
             
-        case name if name in player1:
+        case name if champions.get(name) in player1:
             return (False, f'{name} is in the enemy team. Try again.')
                 
-        case name if name in player2:
+        case name if champions.get(name) in player2:
             return (False, f'{name} is in the enemy team. Try again.')
                 
         case _:
-            # playerList.append(name)
             champ = champions.get(name)
             playerList.append(champ)
             return (True, "")
-    
+
+
+def print_available_champs(champions, connection):
+    table_string = ""
+    for champion in champions.values():
+        if champion not in player1 and champion not in player2:
+            table_string += f'{champion}\n'
+    connection.send(table_string.encode())
 
 
 def doPlayerTurn(connection, playerID):
+    print_available_champs(champions, connection)
     playerTurn = updatePlayer()
     connection.send(playerTurn.encode())
     
     if str(playerID) == playerTurn:
         while True:
-            playerMove = connection.recv(1024).decode()
+            playerMove = connection.recv(64).decode()
             moveLegality = choosePlayerList(playerID, playerMove)
             if moveLegality[0]:
                 connection.send("True".encode())
@@ -120,6 +155,7 @@ def turnSetup():
 def doTurns(amount):
     for _ in range(amount):
         turnSetup()
+
 
 def doRound():
     results = []
@@ -152,16 +188,18 @@ def doRounds(amount):
 
     return results
 
+
 def updateIndex(index):
     index += 1
     if index > 1:
         index = 0
     return index
 
+
 def printResults(result):
     blue_score = 0
     red_score = 0
-
+    gameInfo = ""
     while len(result) > 0:
         round = result[0]
         champions = round[0]
@@ -175,23 +213,15 @@ def printResults(result):
 
         redChoice = emoji(pair.red.value)
         blueChoice = emoji(pair.blue.value)
-        roundInfo = f'{redChamp.name} {redChoice}\n{blueChamp.name} {blueChoice}\n'
-        sendToBothClients(roundInfo)
-
-
-
-        
-
-        print(f'{redChamp.name} {redChoice}')
-        print(f'{blueChamp.name} {blueChoice}')
-
-
-        print()
-
+        roundInfo = f'{redChamp.name} {redChoice}\n{blueChamp.name} {blueChoice}\n\n'
+        gameInfo += roundInfo
         result.pop(0)
     
-    print(f'red score: {red_score}')
-    print(f'blue score: {blue_score}')
+    red_score = f'red score: {red_score}'
+    blue_score = f'blue score: {blue_score}'
+    gameInfo += red_score + '\n' + blue_score
+    print(gameInfo)
+    sendToBothClients(gameInfo)
     
 
 def emoji(value):
@@ -210,6 +240,7 @@ def emoji(value):
     
     return EMOJI.get(shape)
     
+
 def sendToBothClients(message):
     message = message.encode()
     for conInfo in connections:
@@ -217,4 +248,6 @@ def sendToBothClients(message):
         connection.send(message)
 
 
+initialise_game()
+initialise_server()
 accept(socket)

@@ -7,36 +7,36 @@ socket.connect(("localhost", 5555))
 initialCon = socket.recv(1024).decode()
 print(initialCon)
 
-
 playerID = socket.recv(1).decode()
+number_of_champs = 0
 print(f"You are Player {playerID}")
 print()
-
-
-while True:
-    available_champs = socket.recv(1024).decode()
-    if(available_champs.__sizeof__ == 0):
-        break
-    print(available_champs)
     
 
-for _ in range(2):
+for _ in range(2): # Game loop
+
+    # Available champions
+    champs = socket.recv(1024).decode()
+    print(champs)
+
+    # Move choice stuff
     playerTurn = socket.recv(1).decode()
     if playerTurn == playerID:
         print("It is your turn")
         playerMove = input("Choose a champion: ")
         socket.send(playerMove.encode())
 
-        moveLegality = socket.recv(1024).decode()
+        moveLegality = socket.recv(64).decode()
         while moveLegality != "True":
             print(moveLegality)
             playerMove = input("Choose a champion: ")
             socket.send(playerMove.encode())
-            moveLegality = socket.recv(1024).decode()
+            moveLegality = socket.recv(64).decode()
 
 
 
-for _ in range(6):
-    result = socket.recv(512).decode()
-    print(result)
+print()
+result = socket.recv(1024).decode()
+print(result)
+
 input()
