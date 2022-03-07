@@ -76,7 +76,7 @@ def accept(socket):
         connections.append((connection, playerID))
         connection.send("Successfully connected".encode())
         connection.send(playerID.encode())
-
+    
     doTurns(2)
     results = doRounds(3)
     print(results)
@@ -200,7 +200,10 @@ def printResults(result):
     blue_score = 0
     red_score = 0
     gameInfo = ""
+    roundNum = 1
     while len(result) > 0:
+        roundInfo = ''
+        roundNum+=1
         round = result[0]
         champions = round[0]
         redChamp = champions[0]
@@ -211,15 +214,25 @@ def printResults(result):
         elif pair.red < pair.blue:
             blue_score += 1
 
+        if roundNum%2 == 0:
+            roundInfo += f'Round {"{:.0f}".format(roundNum/2)}\n'
         redChoice = emoji(pair.red.value)
         blueChoice = emoji(pair.blue.value)
-        roundInfo = f'{redChamp.name} {redChoice}\n{blueChamp.name} {blueChoice}\n\n'
+        roundInfo += f'[red]{redChamp.name}[/red] {redChoice}\n[blue]{blueChamp.name}[/blue] {blueChoice}\n\n'
         gameInfo += roundInfo
         result.pop(0)
     
-    red_score = f'red score: {red_score}'
-    blue_score = f'blue score: {blue_score}'
-    gameInfo += red_score + '\n' + blue_score
+    if red_score == blue_score:
+        winner = "Draw, GGWP"
+    elif red_score > blue_score:
+        winner = "[red]Red[/red] wins!"
+    else:
+        winner = "[blue]Blue[/blue] wins!"
+    
+    red_score = f'[red]red score[/red]: {red_score}'
+    blue_score = f'[blue]blue score[/blue]: {blue_score}'
+    gameInfo += red_score + '\n' + blue_score + '\n' + winner
+    
     print(gameInfo)
     sendToBothClients(gameInfo)
     
