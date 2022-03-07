@@ -13,6 +13,13 @@ print(f"You are Player {playerID}")
 print()
 
 
+while True:
+    available_champs = socket.recv(1024).decode()
+    if(available_champs.__sizeof__ == 0):
+        break
+    print(available_champs)
+    
+
 for _ in range(2):
     playerTurn = socket.recv(1).decode()
     if playerTurn == playerID:
@@ -26,7 +33,9 @@ for _ in range(2):
             playerMove = input("Choose a champion: ")
             socket.send(playerMove.encode())
             moveLegality = socket.recv(1024).decode()
-        
+
+
+
 for _ in range(6):
     result = socket.recv(512).decode()
     print(result)

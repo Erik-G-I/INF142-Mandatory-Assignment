@@ -1,4 +1,4 @@
-from multiprocessing import RLock
+from multiprocessing import RLock, connection
 from socket import socket
 from threading import Thread
 from time import sleep
@@ -6,6 +6,7 @@ from champlistloader import load_some_champs
 from core import pair_throw
 import random
 from core import Shape
+from rich.table import Table
 
 socket = socket()
 
@@ -29,6 +30,7 @@ def updatePlayer():
 
 
 def accept(socket):
+    global champions
     while len(connections) < 2:
         connection, addr = socket.accept()
         print("Accepted", connection, "from", addr)
@@ -37,12 +39,20 @@ def accept(socket):
         connection.send("Successfully connected".encode())
         connection.send(playerID.encode())
 
+    
+    print_available_champs(champions)
     doTurns(2)
     results = doRounds(3)
     print(results)
     print()
     printResults(results)
 
+def print_available_champs(champions):
+
+    sendToBothClients('Available champions\n')
+    # Populate the table
+    for champion in champions.values():
+        sendToBothClients(f"{champion}\n")
 
 
 def choosePlayerList(playerID, playerMove):
