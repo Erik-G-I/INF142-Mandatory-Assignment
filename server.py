@@ -1,4 +1,5 @@
 from socket import socket, AF_INET, SOCK_STREAM
+from this import s
 from threading import Thread
 from core import pair_throw
 from core import Shape
@@ -6,6 +7,7 @@ from core import Champion
 import random
 import json
 from rich.table import Table
+from datetime import datetime
 
 def initialise_server():
     global socket
@@ -19,11 +21,13 @@ def initialise_game():
     global player1
     global player2
     global champions
+    global matchSummary
     connections = []
     currentPlayer = "2"
     player1 = []
     player2 = []
     champions = fetch_champs()
+    matchSummary = ""
 
 
 def fetch_champs():
@@ -82,6 +86,8 @@ def accept(socket):
     print(results)
     print()
     printResults(results)
+    
+    
 
 
 def choosePlayerList(playerID, playerMove):
@@ -197,6 +203,7 @@ def updateIndex(index):
 
 
 def printResults(result):
+    global matchSummary
     blue_score = 0
     red_score = 0
     gameInfo = ""
@@ -235,6 +242,8 @@ def printResults(result):
     
     print(gameInfo)
     sendToBothClients(gameInfo)
+    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    matchSummary = timestamp + '\n' + gameInfo
     
 
 def emoji(value):
@@ -260,7 +269,20 @@ def sendToBothClients(message):
         connection = conInfo[0]
         connection.send(message)
 
+def writeMatchDetails(message):
+    message = message.encode()
+    db = socket(AF_INET, SOCK_STREAM)
+    db.connect(("localhost", 6000))
+    initialCon = db.recv(128).decode()
+    print(initialCon)
+
+    db.send("write match details".encode())
+    db.recv(1024).decode()
+    db.send(message)
+    db.close()
+
 
 initialise_game()
 initialise_server()
 accept(socket)
+writeMatchDetails(matchSummary)
