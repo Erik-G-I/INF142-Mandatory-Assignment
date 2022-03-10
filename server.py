@@ -26,7 +26,6 @@ def initialise_game():
     player1 = []
     player2 = []
     champions = fetch_champs()
-    matchSummary = ""
 
 
 def fetch_champs():
