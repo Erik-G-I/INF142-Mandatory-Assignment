@@ -1,5 +1,4 @@
 from socket import socket, AF_INET, SOCK_STREAM
-from time import sleep
 from rich import print
 
 socket = socket(AF_INET, SOCK_STREAM)
@@ -9,7 +8,6 @@ initialCon = socket.recv(1024).decode()
 print(initialCon)
 
 playerID = socket.recv(1).decode()
-number_of_champs = 0
 print(f"You are Player {playerID}")
 print()
 

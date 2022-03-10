@@ -24,6 +24,7 @@ def accept(socket):
         connection, addr = socket.accept()
         connection.send("Successfully connected to database".encode())
         request = connection.recv(1024).decode()
+        print(request)
         handle_request(request, connection)
 
 
@@ -37,15 +38,6 @@ def handle_request(request, connection):
         print(champions)
         print()
         connection.send(str(champions).encode())
-    if request == "write match details":
-        print('conn recieved')
-        connection.send("request received".encode())
-        matchResults = connection.recv(1024).decode()
-        writeToTxt(matchResults)
 
-def writeToTxt(content):
-    with open('match_history', 'w') as f:
-        f.write(f'\n{content}')
-        f.close()
 
 accept(socket)

@@ -1,13 +1,12 @@
 from socket import socket, AF_INET, SOCK_STREAM
-from this import s
 from threading import Thread
 from core import pair_throw
 from core import Shape
 from core import Champion
 import random
 import json
-from rich.table import Table
 from datetime import datetime
+from time import sleep
 
 def initialise_server():
     global socket
@@ -41,7 +40,7 @@ def fetch_champs():
     s.send(request)
     champions = s.recv(1024).decode()
     champions = json.loads(champions)
-    #s.close()
+    s.close()
 
     print("Fetched the following champions from database:")
     for champ in champions:
@@ -61,7 +60,7 @@ def convert_to_champ(champ_stats):
     return Champion(name, rock, paper, scissors)
 
 
-def updatePlayer():
+def update_player():
     global currentPlayer
     if currentPlayer == "1":
         currentPlayer = "2"
@@ -82,16 +81,17 @@ def accept(socket):
         connection.send("Successfully connected".encode())
         connection.send(playerID.encode())
     
-    doTurns(2)
-    results = doRounds(3)
+    do_turns(2)
+    results = do_rounds(3)
     print(results)
     print()
-    printResults(results)
-    
+    print_results(results)
+    socket.close()
+    sleep(10)
     
 
 
-def choosePlayerList(playerID, playerMove):
+def choose_player_list(playerID, playerMove):
     if playerID == "1":
         return isLegal(playerMove, player1)
     if playerID == "2":
@@ -132,15 +132,15 @@ def print_available_champs(champions, connection):
     connection.send(table_string.encode())
 
 
-def doPlayerTurn(connection, playerID):
+def do_player_turn(connection, playerID):
     print_available_champs(champions, connection)
-    playerTurn = updatePlayer()
+    playerTurn = update_player()
     connection.send(playerTurn.encode())
     
     if str(playerID) == playerTurn:
         while True:
             playerMove = connection.recv(64).decode()
-            moveLegality = choosePlayerList(playerID, playerMove)
+            moveLegality = choose_player_list(playerID, playerMove)
             if moveLegality[0]:
                 connection.send("True".encode())
                 break
@@ -150,18 +150,18 @@ def doPlayerTurn(connection, playerID):
     print(f"Player {playerID} chose {playerMove}")
 
 
-def turnSetup():
+def turn_setup():
     for conInfo in connections:
         connection = conInfo[0]
         playerID = conInfo[1]
-        thread = Thread(target=doPlayerTurn, args=(connection, playerID,))
+        thread = Thread(target=do_player_turn, args=(connection, playerID,))
         thread.start()
         thread.join()
 
 
-def doTurns(amount):
+def do_turns(amount):
     for _ in range(amount):
-        turnSetup()
+        turn_setup()
 
 
 def doRound():
@@ -173,8 +173,8 @@ def doRound():
     t1 = pair_throw(p1champ, p2champ)
     r1 = ((p1champ, p2champ), t1)
 
-    p1champindex = updateIndex(p1champindex)
-    p2champindex = updateIndex(p2champindex)
+    p1champindex = update_index(p1champindex)
+    p2champindex = update_index(p2champindex)
     p1champ = player1[p1champindex]
     p2champ = player2[p2champindex]
     t2 = pair_throw(p1champ, p2champ)
@@ -186,7 +186,7 @@ def doRound():
     return results
 
 
-def doRounds(amount):
+def do_rounds(amount):
     results = []
     for _ in range(amount):
         result = doRound()
@@ -196,14 +196,14 @@ def doRounds(amount):
     return results
 
 
-def updateIndex(index):
+def update_index(index):
     index += 1
     if index > 1:
         index = 0
     return index
 
 
-def printResults(result):
+def print_results(result):
     global matchSummary
     blue_score = 0
     red_score = 0
@@ -242,7 +242,7 @@ def printResults(result):
     gameInfo += red_score + '\n' + blue_score + '\n' + winner
     
     print(gameInfo)
-    sendToBothClients(gameInfo)
+    send_to_both_clients(gameInfo)
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     matchSummary = timestamp + '\n' + gameInfo
     
@@ -264,26 +264,13 @@ def emoji(value):
     return EMOJI.get(shape)
     
 
-def sendToBothClients(message):
+def send_to_both_clients(message):
     message = message.encode()
     for conInfo in connections:
         connection = conInfo[0]
         connection.send(message)
 
-def writeMatchDetails(message):
-    message = message.encode()
-    #db = socket(AF_INET, SOCK_STREAM)
-    #db.connect(("localhost", 6000))
-    initialCon = s.recv(128).decode()
-    print(initialCon)
-
-    s.send("write match details".encode())
-    s.recv(1024).decode()
-    s.send(message)
-    s.close()
-
 
 initialise_game()
 initialise_server()
 accept(socket)
-writeMatchDetails(matchSummary)
