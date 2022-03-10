@@ -78,6 +78,7 @@ def accept(socket):
         playerID = str(len(connections)+1)
         connections.append((connection, playerID))
         connection.send("Successfully connected".encode())
+        sleep(0.1)
         connection.send(playerID.encode())
     
     do_turns(2)
@@ -134,6 +135,7 @@ def print_available_champs(champions, connection):
 def do_player_turn(connection, playerID):
     print_available_champs(champions, connection)
     playerTurn = update_player()
+    sleep(0.1)
     connection.send(playerTurn.encode())
     
     if str(playerID) == playerTurn:
