@@ -31,6 +31,7 @@ def initialise_game():
 
 
 def fetch_champs():
+    global s
     s = socket(AF_INET, SOCK_STREAM)
     s.connect(("localhost", 6000))
     initialCon = s.recv(128).decode()
@@ -40,7 +41,7 @@ def fetch_champs():
     s.send(request)
     champions = s.recv(1024).decode()
     champions = json.loads(champions)
-    s.close()
+    #s.close()
 
     print("Fetched the following champions from database:")
     for champ in champions:
@@ -271,15 +272,15 @@ def sendToBothClients(message):
 
 def writeMatchDetails(message):
     message = message.encode()
-    db = socket(AF_INET, SOCK_STREAM)
-    db.connect(("localhost", 6000))
-    initialCon = db.recv(128).decode()
+    #db = socket(AF_INET, SOCK_STREAM)
+    #db.connect(("localhost", 6000))
+    initialCon = s.recv(128).decode()
     print(initialCon)
 
-    db.send("write match details".encode())
-    db.recv(1024).decode()
-    db.send(message)
-    db.close()
+    s.send("write match details".encode())
+    s.recv(1024).decode()
+    s.send(message)
+    s.close()
 
 
 initialise_game()
