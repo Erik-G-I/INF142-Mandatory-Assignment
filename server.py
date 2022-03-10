@@ -249,9 +249,9 @@ def print_results(result):
 
 def emoji(value):
     EMOJI = {
-        Shape.ROCK: ':raised_fist-emoji:',
-        Shape.PAPER: ':raised_hand-emoji:',
-        Shape.SCISSORS: ':victory_hand-emoji:'
+        Shape.ROCK: 'ROCK',
+        Shape.PAPER: 'PAPER',
+        Shape.SCISSORS: 'SCISSORS'
     }
     shape = None
     if value == 1:
