@@ -20,7 +20,6 @@ def initialise_game():
     global player1
     global player2
     global champions
-    global matchSummary
     connections = []
     currentPlayer = "2"
     player1 = []
